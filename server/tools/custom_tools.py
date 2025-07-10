@@ -1,7 +1,7 @@
 from langchain.tools import tool
 from langchain_community.vectorstores import Chroma
-from core.llm import get_embedding_model
-from core.config import settings
+from server.core.llm import get_embedding_model
+from server.core.config import settings
 import datetime
 
 # --- RAG Tool ---
