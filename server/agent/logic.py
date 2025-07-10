@@ -1,26 +1,36 @@
-from typing import List, TypedDict
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+import operator
+from typing import List, Annotated
+from typing_extensions import TypedDict
+
+from langchain_core.messages import BaseMessage, HumanMessage
 from langgraph.graph import StateGraph, END
-from langgraph.prebuilt import ToolNode  # ToolExecutor 대신 ToolNode를 import
+from langgraph.prebuilt import ToolNode
 
 from server.core.llm import get_chat_model
 from server.tools.custom_tools import available_tools
 
-# Agent 상태 정의
+# --- 1. 상태(State) 정의 수정 ---
+# messages 필드에 operator.add를 사용하여, 새로운 메시지가 항상 리스트에 추가되도록 설정합니다.
 class AgentState(TypedDict):
-    messages: List[BaseMessage]
+    messages: Annotated[List[BaseMessage], operator.add]
 
 # 모델과 도구 준비
 llm = get_chat_model()
 llm_with_tools = llm.bind_tools(available_tools)
 
+# --- 2. 노드(Node) 로직 수정 ---
+# 각 노드는 이제 전체 대화 기록이 아닌, '자신이 생성한 새 메시지'만 반환하면 됩니다.
+# LangGraph가 알아서 상태(messages)에 추가해 줄 것입니다.
+
 # Agent 노드
 def agent_node(state: AgentState):
+    """LLM을 호출하여 다음 메시지를 생성합니다."""
     response = llm_with_tools.invoke(state["messages"])
     return {"messages": [response]}
 
 # 조건부 엣지 로직
 def should_continue(state: AgentState):
+    """마지막 메시지에 도구 호출이 있는지 확인하여 다음 단계를 결정합니다."""
     if state["messages"][-1].tool_calls:
         return "use_tool"
     else:
@@ -66,6 +76,7 @@ def invoke_agent(query: str):
         HumanMessage(content=query)
     ]
     
+    # 올바른 형식으로 invoke 함수 호출
     final_state = agent_graph.invoke({"messages": initial_messages})
     final_response = final_state["messages"][-1].content
     return final_response

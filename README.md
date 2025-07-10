@@ -16,7 +16,7 @@ python server/scripts/ingest_data.py
 
 #### **2단계: FastAPI 백엔드 서버 실행**
 AI Agent 로직을 처리하는 API 서버를 실행합니다.
-uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+uvicorn api.main:app --host 0.0.0.0 --port 8001 --reload
 
 #### **3단계: Streamlit 프론트엔드 실행**
 사용자 인터페이스(UI)를 실행합니다.
