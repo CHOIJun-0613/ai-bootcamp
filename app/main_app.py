@@ -42,7 +42,7 @@ if prompt := st.chat_input("무엇을 도와드릴까요?"):
         
         try:
             # FastAPI 백엔드 호출
-            with st.spinner("생각하는 과정 표시... 🤔"):
+            with st.spinner("생각하는 중... 🤔"):
                 response = requests.post(API_URL, json={"query": prompt})
                 response.raise_for_status() # 오류 발생 시 예외 처리
                 

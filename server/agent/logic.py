@@ -3,8 +3,8 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMe
 from langgraph.graph import StateGraph, END
 from langgraph.prebuilt import ToolExecutor
 
-from core.llm import get_chat_model
-from tools.custom_tools import available_tools
+from server.core.llm import get_chat_model
+from server.tools.custom_tools import available_tools
 
 # 1. Agent의 상태(State) 정의
 class AgentState(TypedDict):
