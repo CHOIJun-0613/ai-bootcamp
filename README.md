@@ -12,7 +12,7 @@ LangChain, LangGraph, RAG, FastAPI, Streamlit을 활용하여 개발한 AI 업�
 
 #### **1단계: Vector DB 생성 (최초 1회만 실행)**
 `docs` 폴더의 문서를 읽어 `db` 디렉토리에 데이터베이스를 생성합니다.
-python -m server.scripts.ingest_data.py
+python -m server.scripts.ingest_data
 
 #### **2단계: FastAPI 백엔드 서버 실행**
 AI Agent 로직을 처리하는 API 서버를 실행합니다.
