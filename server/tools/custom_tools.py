@@ -1,6 +1,6 @@
 from langchain.tools import tool
 from langchain_community.vectorstores import Chroma
-from server.core.llm import get_embedding_model
+from server.core.google_llm import embeddings  # Google Embeddings으로 변경
 from server.core.config import settings
 import datetime
 
@@ -17,8 +17,8 @@ def search_knowledge_base(query: str) -> str:
     Returns:
         str: 검색된 문서의 내용.
     """
-    embedding_model = get_embedding_model()
-    vectorstore = Chroma(persist_directory=settings.CHROMA_PATH, embedding_function=embedding_model)
+    # embeddings 객체를 직접 사용
+    vectorstore = Chroma(persist_directory=settings.CHROMA_PATH, embedding_function=embeddings)
     
     # k=3은 가장 유사한 3개의 청크를 가져오라는 의미
     retriever = vectorstore.as_retriever(search_kwargs={"k": 3})

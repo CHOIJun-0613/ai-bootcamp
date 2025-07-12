@@ -14,6 +14,9 @@ class Settings:
     AOAI_GPT4O: str = os.getenv("AOAI_DEPLOY_GPT4O")
     AOAI_EMBED_LARGE: str = os.getenv("AOAI_DEPLOY_EMBED_3_LARGE")
 
+    # Google AI
+    GOOGLE_API_KEY: str = os.getenv("GOOGLE_API_KEY")
+
     # Vector DB Path
     CHROMA_PATH: str = "db"
 

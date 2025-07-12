@@ -4,8 +4,8 @@ from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
 
-# 프로젝트 루트 디렉토리를 기준으로 경로 설정
-from server.core.llm import get_embedding_model
+# Google Embeddings을 사용하도록 경로 변경
+from server.core.google_llm import embeddings
 from server.core.config import settings
 
 def ingest_documents():
@@ -37,12 +37,11 @@ def ingest_documents():
     print(f"{len(splits)}개의 청크로 분할했습니다.")
 
     print("임베딩 및 Vector DB 저장을 시작합니다...")
-    embedding_model = get_embedding_model()
     
-    # ChromaDB에 저장
+    # ChromaDB에 저장 (embedding_model 대신 embeddings 객체 직접 사용)
     vectorstore = Chroma.from_documents(
         documents=splits,
-        embedding=embedding_model,
+        embedding=embeddings,
         persist_directory=settings.CHROMA_PATH
     )
     

@@ -3,10 +3,11 @@ from typing import Annotated, List, TypedDict
 
 from langchain_core.messages import BaseMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.utils.function_calling import convert_to_openai_tool
 from langgraph.graph import END, StateGraph
 from langgraph.prebuilt import ToolNode
 
-from server.core.llm import llm
+from server.core.google_llm import llm  # Google LLM으로 변경
 from server.tools.custom_tools import available_tools
 
 # --- 1. Agent State 정의 ---
@@ -14,8 +15,10 @@ class AgentState(TypedDict):
     messages: Annotated[List[BaseMessage], lambda x, y: x + y]
 
 
-# --- 2. LLM과 도구 바인딩 ---
-llm_with_tools = llm.bind_tools(available_tools)
+# --- 2. LLM과 도구 바인딩 (Google LLM 방식) ---
+# Google Generative AI는 OpenAI의 tool 형식에 맞춰줘야 합니다.
+tools = [convert_to_openai_tool(t) for t in available_tools]
+llm_with_tools = llm.bind(tools=tools)
 
 # --- 3. 프롬프트 정의 ---
 system_prompt = """
@@ -25,16 +28,26 @@ system_prompt = """
 - 당신은 항상 전문가적이고 친절한 태도를 유지하며, 간결하고 명확하게 답변합니다.
 - 현재 날짜는 {today} 입니다. 날짜 관련 질문에는 이 정보를 기반으로 답변해야 합니다.
 
-## 답변 생성 절차 
+## 작업 흐름 (Workflow)
 1.  **의도 파악**: 사용자의 질문이 무엇을 의미하는지 정확하게 분석합니다.
-2.  **도구 검토**: 질문에 답변하기 위해 사용 가능한 도구(`search_knowledge_base`, `get_email_summary`, `get_schedule`) 
-    중 가장 적합한 것이 있는지 검토합니다.
-3.  **정보 통합 및 답변 생성**: 도구를 사용했다면, 그 결과와 당신의 지식을 통합하여 종합적인 답변을 만듭니다.
+2.  **도구 사용 결정**: 질문에 답변하기 위해 `search_knowledge_base` 같은 도구가 필요한지 판단합니다.
+3.  **답변 생성**:
+    - **도구를 사용한 경우**: 대화 기록에 추가된 **[도구 실행 결과]**를 반드시 찾아서, 그 내용을 바탕으로 사용자의 질문에 대한 답변을 생성합니다. 절대로 당신의 기존 지식에만 의존해서 답변하면 안 됩니다.
+    - **도구를 사용하지 않은 경우**: 당신의 일반 지식을 활용하여 답변합니다.
 4.  **출력 형식 준수**: 아래 '출력 형식'에 맞춰 최종 답변을 구성합니다.
 
-## 출력 형식 
-모든 답변은 아래 예시와 같이 `[질문]`, `[답변]`, `[참고 자료]` 형식을 반드시 따라야 합니다. 
-특히, 도구를 사용한 경우 '참고 자료' 섹션에 어떤 도구나 문서를 참고했는지 명시해야 합니다.
+## Available Tools
+- `search_knowledge_base(query: str)`:
+    - **설명**: 사용자가 '문서', '보고서', '회의록', '자료', '내용' 등과 관련된 질문을 할 때 사용합니다. 사내 데이터베이스(Vector DB)에서 관련 정보를 검색하여 답변의 근거를 마련합니다.
+    - **사용 예시**: "AI 도입 TF 회의록 요약해줘", "프로젝트 A 보고서 내용 알려줘", "AI 비서 활용 사례 문서 찾아줘"
+- `get_email_summary(user: str = "current_user")`:
+    - **설명**: 사용자가 '메일', '이메일'에 대해 질문할 때 사용합니다. 오늘 받은 이메일을 요약해서 반환합니다.
+- `get_schedule(date: str = "today")`:
+    - **설명**: 사용자가 '일정', '미팅', '회의', '캘린더'에 대해 질문할 때 사용합니다. 지정된 날짜의 일정을 확인하여 반환합니다.
+
+## 출력 형식
+모든 답변은 아래 예시와 같이 `[질문]`, `[답변]`, `[참고 자료]` 형식을 반드시 따라야 합니다.
+특히, `search_knowledge_base` 도구를 사용한 경우, **[참고 자료]** 섹션에 검색된 문서의 출처(source)를 명확히 밝혀야 합니다.
 
 ---
 **[질문]**
@@ -46,7 +59,7 @@ AI 비서는 문서 검색, 이메일 요약, 일정 확인 등 다양한 업무
 - **기대 효과**: 업무 생산성 향상 및 정보 접근성 증대
 
 **[참고 자료]**
-- `ai_assist.txt`
+- `docs\\ai_assist.txt`
 
 ---
 **[질문]**
